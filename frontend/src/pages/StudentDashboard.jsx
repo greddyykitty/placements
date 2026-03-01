@@ -65,8 +65,8 @@ export default function StudentDashboard() {
         return `badge ${map[val] || ''}`;
     };
 
-    const isAlreadyApplied = (driveId) =>
-        applications.some(a => a.drive?.id === driveId);
+    const getApplicationForDrive = (driveId) =>
+        applications.find(a => a.drive?.id === driveId);
 
     const unreadCount = notifications.filter(n => n.status === 'UNREAD').length;
 
@@ -153,18 +153,26 @@ export default function StudentDashboard() {
                                                     {drive.driveDate}
                                                 </span>
                                             </div>
-                                            {isAlreadyApplied(drive.id) ? (
-                                                <span className="badge badge-applied">Applied</span>
-                                            ) : (
-                                                <button
-                                                    id={`apply-${drive.id}`}
-                                                    className="btn btn-primary btn-sm"
-                                                    onClick={() => handleApply(drive.id)}
-                                                    disabled={loading}
-                                                >
-                                                    Apply Now
-                                                </button>
-                                            )}
+                                            {(() => {
+                                                const app = getApplicationForDrive(drive.id);
+                                                if (app) {
+                                                    return (
+                                                        <span className={getBadgeClass(app.status)}>
+                                                            {app.status}
+                                                        </span>
+                                                    );
+                                                }
+                                                return (
+                                                    <button
+                                                        id={`apply-${drive.id}`}
+                                                        className="btn btn-primary btn-sm"
+                                                        onClick={() => handleApply(drive.id)}
+                                                        disabled={loading}
+                                                    >
+                                                        Apply Now
+                                                    </button>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 ))}
