@@ -31,6 +31,12 @@ export default function AdminDashboard() {
     const [eligDriveDate, setEligDriveDate] = useState('');
     const [eligFile, setEligFile] = useState(null);
 
+    // Shortlist
+    const [shortlistCompanyName, setShortlistCompanyName] = useState('');
+    const [shortlistDriveDate, setShortlistDriveDate] = useState('');
+    const [shortlistStatus, setShortlistStatus] = useState('SELECTED');
+    const [shortlistFile, setShortlistFile] = useState(null);
+
     // Application filter
     const [filterCompanyName, setFilterCompanyName] = useState('');
     const [filterDriveDate, setFilterDriveDate] = useState('');
@@ -133,6 +139,29 @@ export default function AdminDashboard() {
         } finally { setLoading(false); }
     };
 
+    // Upload shortlist
+    const handleUploadShortlist = async (e) => {
+        e.preventDefault();
+        if (!shortlistFile || !shortlistCompanyName || !shortlistDriveDate) {
+            showError('Provide Company Name, Drive Date and CSV file');
+            return;
+        }
+        setLoading(true);
+        try {
+            const fd = new FormData();
+            fd.append('file', shortlistFile);
+            const res = await adminApi.uploadShortlist(shortlistCompanyName, shortlistDriveDate, shortlistStatus, fd);
+            showSuccess(`Shortlist processed: ${res.data.shortlistedCount} Selected, ${res.data.rejectedCount} Rejected. (${res.data.totalProcessed} Total)`);
+            setShortlistCompanyName('');
+            setShortlistDriveDate('');
+            setShortlistStatus('SELECTED');
+            setShortlistFile(null);
+            loadApplications();
+        } catch (err) {
+            showError(err.response?.data?.message || err.response?.data?.error || 'Shortlist upload failed');
+        } finally { setLoading(false); }
+    };
+
     // Update application status
     const handleStatusChange = async (appId, newStatus) => {
         try {
@@ -201,6 +230,7 @@ export default function AdminDashboard() {
                         { key: 'companies', label: '🏢 Add Company' },
                         { key: 'drives', label: '📅 Add Drive' },
                         { key: 'eligibility', label: '📤 Upload Eligibility' },
+                        { key: 'shortlist', label: '🏆 Upload Shortlist' },
                         { key: 'applications', label: '📋 Applications' },
                     ].map(t => (
                         <button
@@ -396,8 +426,78 @@ export default function AdminDashboard() {
                             </button>
                         </form>
                     </div>
-                )
-                }
+                )}
+
+                {/* Upload Shortlist */}
+                {tab === 'shortlist' && (
+                    <div className="card">
+                        <div className="card-header">
+                            <div className="card-title">Upload Shortlist CSV</div>
+                            <div className="card-subtitle">Upload a CSV to bulk accept/reject students for a drive</div>
+                        </div>
+                        <form onSubmit={handleUploadShortlist}>
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Company Name</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="e.g. Google"
+                                        value={shortlistCompanyName}
+                                        onChange={e => setShortlistCompanyName(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Drive Date</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={shortlistDriveDate}
+                                        onChange={e => setShortlistDriveDate(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Target Status for Roll Nos in CSV</label>
+                                    <select
+                                        className="form-control"
+                                        value={shortlistStatus}
+                                        onChange={e => setShortlistStatus(e.target.value)}
+                                    >
+                                        <option value="SELECTED">SELECTED</option>
+                                        <option value="ONGOING">ONGOING</option>
+                                    </select>
+                                    <small className="text-muted mt-1 display-block">
+                                        Students NOT in the CSV will automatically be marked as REJECTED.
+                                    </small>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">CSV File (column: rollNo)</label>
+                                    <input
+                                        type="file"
+                                        accept=".csv"
+                                        className="form-control"
+                                        onChange={e => setShortlistFile(e.target.files[0])}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                disabled={loading}
+                            >
+                                {loading ? 'Processing...' : '🏆 Process Shortlist'}
+                            </button>
+                        </form>
+                    </div>
+                )}
 
                 {/* Applications */}
                 {
@@ -462,7 +562,8 @@ export default function AdminDashboard() {
                                         <thead>
                                             <tr>
                                                 <th>ID</th>
-                                                <th>Student</th>
+                                                <th>Roll No</th>
+                                                <th>Student Name</th>
                                                 <th>Company</th>
                                                 <th>Date</th>
                                                 <th>Status</th>
@@ -473,6 +574,7 @@ export default function AdminDashboard() {
                                             {applications.map(app => (
                                                 <tr key={app.id}>
                                                     <td>#{app.id}</td>
+                                                    <td>{app.student?.rollNo || '—'}</td>
                                                     <td>{app.student?.name || '—'}</td>
                                                     <td>{app.drive?.company?.name || '—'}</td>
                                                     <td>{app.drive?.driveDate || '—'}</td>

@@ -17,7 +17,7 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "student_id", nullable = false)
     @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler", "password", "applications" })
     private User student;

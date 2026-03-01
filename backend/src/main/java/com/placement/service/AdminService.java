@@ -114,6 +114,63 @@ public class AdminService {
         return updated;
     }
 
+    public Map<String, Object> uploadShortlist(String companyName, String driveDate, String statusParams,
+            MultipartFile file) {
+        Company company = companyRepository.findByNameIgnoreCase(companyName)
+                .orElseThrow(() -> new CustomException("Company not found: " + companyName, HttpStatus.NOT_FOUND));
+
+        LocalDate date = LocalDate.parse(driveDate);
+        Drive drive = driveRepository.findByCompanyAndDriveDate(company, date)
+                .orElseThrow(() -> new CustomException(
+                        "No drive found for '" + companyName + "' on " + driveDate, HttpStatus.NOT_FOUND));
+
+        Application.ApplicationStatus targetStatus;
+        try {
+            targetStatus = Application.ApplicationStatus.valueOf(statusParams.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            targetStatus = Application.ApplicationStatus.SELECTED;
+        }
+
+        List<String> shortlistedRollNumbers = csvService.parseRollNumbers(file);
+        List<Application> driveApplications = applicationRepository.findByDrive(drive);
+
+        int shortlistedCount = 0;
+        int rejectedCount = 0;
+
+        for (Application app : driveApplications) {
+            String rollNo = app.getStudent().getRollNo();
+            Application.ApplicationStatus oldStatus = app.getStatus();
+            boolean isShortlisted = shortlistedRollNumbers.contains(rollNo);
+
+            if (isShortlisted) {
+                app.setStatus(targetStatus);
+                shortlistedCount++;
+            } else {
+                app.setStatus(Application.ApplicationStatus.REJECTED);
+                rejectedCount++;
+            }
+
+            if (oldStatus != app.getStatus()) {
+                applicationRepository.save(app);
+                // Notify the student
+                Notification notification = Notification.builder()
+                        .student(app.getStudent())
+                        .drive(drive)
+                        .message("Your application status for " + company.getName() + " has been updated to: "
+                                + app.getStatus())
+                        .status(Notification.NotificationStatus.UNREAD)
+                        .build();
+                notificationRepository.save(notification);
+            }
+        }
+
+        return Map.of(
+                "message", "Shortlist processed successfully",
+                "shortlistedCount", shortlistedCount,
+                "rejectedCount", rejectedCount,
+                "totalProcessed", driveApplications.size());
+    }
+
     public List<Application> getAllApplications() {
         return applicationRepository.findAll();
     }

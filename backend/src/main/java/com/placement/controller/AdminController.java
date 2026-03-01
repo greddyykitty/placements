@@ -40,6 +40,15 @@ public class AdminController {
         return ResponseEntity.ok(adminService.uploadEligibility(companyName, driveDate, file));
     }
 
+    @PostMapping("/upload-shortlist")
+    public ResponseEntity<Map<String, Object>> uploadShortlist(
+            @RequestParam String companyName,
+            @RequestParam String driveDate,
+            @RequestParam(defaultValue = "SELECTED") String status,
+            @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(adminService.uploadShortlist(companyName, driveDate, status, file));
+    }
+
     @PutMapping("/application/{id}")
     public ResponseEntity<Application> updateApplicationStatus(
             @PathVariable Long id,

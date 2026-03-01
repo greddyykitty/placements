@@ -16,5 +16,9 @@ export const adminApi = {
     getBranchAnalytics: (branch) => http().get(`/admin/analytics/branch/${branch}`),
     getCompanyAnalytics: (companyId) => http().get(`/admin/analytics/company/${companyId}`),
     getApplicationsByDrive: (companyName, driveDate) =>
-        http().get(`/admin/applications/${encodeURIComponent(companyName)}/${driveDate}`)
+        http().get(`/admin/applications/${encodeURIComponent(companyName)}/${driveDate}`),
+    uploadShortlist: (companyName, driveDate, status, formData) =>
+        http().post(`/admin/upload-shortlist?companyName=${encodeURIComponent(companyName)}&driveDate=${driveDate}&status=${status}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        })
 };
