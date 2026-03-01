@@ -32,7 +32,8 @@ export default function Register() {
         }
     };
 
-    const isStudent = form.role === 'STUDENT';
+    // All users registering through the form default to STUDENT
+    // The backend handles initial admin creation internally if needed.
 
     return (
         <div className="auth-page">
@@ -47,33 +48,18 @@ export default function Register() {
                 {success && <div className="alert alert-success">✅ {success}</div>}
 
                 <form onSubmit={handleSubmit}>
-                    <div className="grid-2" style={{ marginBottom: 0 }}>
-                        <div className="form-group">
-                            <label className="form-label">Full Name</label>
-                            <input
-                                id="reg-name"
-                                type="text"
-                                name="name"
-                                className="form-control"
-                                placeholder="John Doe"
-                                value={form.name}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Role</label>
-                            <select
-                                id="reg-role"
-                                name="role"
-                                className="form-control"
-                                value={form.role}
-                                onChange={handleChange}
-                            >
-                                <option value="STUDENT">Student</option>
-                                <option value="ADMIN">Admin</option>
-                            </select>
-                        </div>
+                    <div className="form-group">
+                        <label className="form-label">Full Name</label>
+                        <input
+                            id="reg-name"
+                            type="text"
+                            name="name"
+                            className="form-control"
+                            placeholder="John Doe"
+                            value={form.name}
+                            onChange={handleChange}
+                            required
+                        />
                     </div>
 
                     <div className="form-group">
@@ -105,40 +91,40 @@ export default function Register() {
                         />
                     </div>
 
-                    {isStudent && (
-                        <div className="grid-2" style={{ marginBottom: 0 }}>
-                            <div className="form-group">
-                                <label className="form-label">Roll Number</label>
-                                <input
-                                    id="reg-rollno"
-                                    type="text"
-                                    name="rollNo"
-                                    className="form-control"
-                                    placeholder="CS001"
-                                    value={form.rollNo}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Branch</label>
-                                <select
-                                    id="reg-branch"
-                                    name="branch"
-                                    className="form-control"
-                                    value={form.branch}
-                                    onChange={handleChange}
-                                >
-                                    <option value="">Select Branch</option>
-                                    <option value="CSE">CSE</option>
-                                    <option value="ECE">ECE</option>
-                                    <option value="ME">ME</option>
-                                    <option value="CE">CE</option>
-                                    <option value="IT">IT</option>
-                                    <option value="EEE">EEE</option>
-                                </select>
-                            </div>
+                    <div className="grid-2" style={{ marginBottom: 0 }}>
+                        <div className="form-group">
+                            <label className="form-label">Roll Number</label>
+                            <input
+                                id="reg-rollno"
+                                type="text"
+                                name="rollNo"
+                                className="form-control"
+                                placeholder="CS001"
+                                value={form.rollNo}
+                                onChange={handleChange}
+                                required
+                            />
                         </div>
-                    )}
+                        <div className="form-group">
+                            <label className="form-label">Branch</label>
+                            <select
+                                id="reg-branch"
+                                name="branch"
+                                className="form-control"
+                                value={form.branch}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">Select Branch</option>
+                                <option value="CSE">CSE</option>
+                                <option value="ECE">ECE</option>
+                                <option value="ME">ME</option>
+                                <option value="CE">CE</option>
+                                <option value="IT">IT</option>
+                                <option value="EEE">EEE</option>
+                            </select>
+                        </div>
+                    </div>
 
                     <button
                         id="reg-submit"

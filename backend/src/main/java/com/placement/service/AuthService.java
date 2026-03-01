@@ -26,11 +26,20 @@ public class AuthService {
             throw new CustomException("Email already registered", HttpStatus.CONFLICT);
         }
 
-        User.Role role;
-        try {
-            role = User.Role.valueOf(request.getRole().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new CustomException("Invalid role. Must be ADMIN or STUDENT");
+        User.Role role = User.Role.STUDENT; // Default to student
+
+        // If trying to register as admin, check if one already exists
+        if ("ADMIN".equalsIgnoreCase(request.getRole())) {
+            long adminCount = userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == User.Role.ADMIN)
+                    .count();
+            if (adminCount > 0) {
+                // If an admin already exists, force this registration to be a student
+                role = User.Role.STUDENT;
+            } else {
+                // First admin registration is allowed
+                role = User.Role.ADMIN;
+            }
         }
 
         User user = User.builder()
