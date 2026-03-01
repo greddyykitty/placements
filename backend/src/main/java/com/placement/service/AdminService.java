@@ -118,6 +118,18 @@ public class AdminService {
         return applicationRepository.findAll();
     }
 
+    public List<Application> getApplicationsByDrive(String companyName, String driveDate) {
+        Company company = companyRepository.findByNameIgnoreCase(companyName)
+                .orElseThrow(() -> new CustomException("Company not found: " + companyName, HttpStatus.NOT_FOUND));
+
+        LocalDate date = LocalDate.parse(driveDate);
+        Drive drive = driveRepository.findByCompanyAndDriveDate(company, date)
+                .orElseThrow(() -> new CustomException(
+                        "No drive found for '" + companyName + "' on " + driveDate, HttpStatus.NOT_FOUND));
+
+        return applicationRepository.findByDrive(drive);
+    }
+
     public List<Application> getApplicationsByStudent(Long studentId) {
         return applicationRepository.findByStudentId(studentId);
     }

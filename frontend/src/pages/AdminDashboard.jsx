@@ -31,15 +31,46 @@ export default function AdminDashboard() {
     const [eligDriveDate, setEligDriveDate] = useState('');
     const [eligFile, setEligFile] = useState(null);
 
+    // Application filter
+    const [filterCompanyName, setFilterCompanyName] = useState('');
+    const [filterDriveDate, setFilterDriveDate] = useState('');
+
     const showSuccess = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000); };
     const showError = (msg) => { setError(msg); setTimeout(() => setError(''), 4000); };
 
     const loadApplications = useCallback(async () => {
         try {
+            setLoading(true);
             const res = await adminApi.getApplications();
             setApps(res.data);
-        } catch { /* silent */ }
+            setFilterCompanyName('');
+            setFilterDriveDate('');
+            showSuccess('Showing all applications');
+        } catch {
+            showError('Failed to load applications');
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    const handleSearchDriveApplications = async (e) => {
+        e.preventDefault();
+        if (!filterCompanyName || !filterDriveDate) {
+            showError('Please provide both Company Name and Drive Date to search');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const res = await adminApi.getApplicationsByDrive(filterCompanyName, filterDriveDate);
+            setApps(res.data);
+            showSuccess(`Showing applications for ${filterCompanyName} on ${filterDriveDate}`);
+        } catch (err) {
+            showError(err.response?.data?.message || 'Failed to search drive applications');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         loadApplications();
@@ -376,22 +407,54 @@ export default function AdminDashboard() {
                                 <div className="flex-between">
                                     <div>
                                         <div className="card-title">Student Applications</div>
-                                        <div className="card-subtitle">{applications.length} total applications</div>
+                                        <div className="card-subtitle">{applications.length} applications found</div>
                                     </div>
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         onClick={loadApplications}
                                     >
-                                        🔄 Refresh
+                                        🔄 View All Applications
                                     </button>
                                 </div>
+                            </div>
+
+                            <div className="p-4 border-b border-gray-lighter bg-gray-50">
+                                <form onSubmit={handleSearchDriveApplications} className="flex gap-4 items-end">
+                                    <div className="form-group flex-1 mb-0">
+                                        <label className="form-label text-sm">Company Name</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="e.g. Google"
+                                            value={filterCompanyName}
+                                            onChange={e => setFilterCompanyName(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="form-group flex-1 mb-0">
+                                        <label className="form-label text-sm">Drive Date</label>
+                                        <input
+                                            type="date"
+                                            className="form-control"
+                                            value={filterDriveDate}
+                                            onChange={e => setFilterDriveDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        disabled={loading}
+                                        style={{ height: '42px', padding: '0 24px' }}
+                                    >
+                                        {loading ? 'Searching...' : '🔍 Search Specific Drive'}
+                                    </button>
+                                </form>
                             </div>
 
                             {applications.length === 0 ? (
                                 <div className="empty-state">
                                     <div className="empty-state-icon">📋</div>
-                                    <h3>No Applications Yet</h3>
-                                    <p>Applications will appear here once students apply.</p>
+                                    <h3>No Applications Found</h3>
+                                    <p>Try clearing your search or wait for students to apply.</p>
                                 </div>
                             ) : (
                                 <div className="table-wrapper">

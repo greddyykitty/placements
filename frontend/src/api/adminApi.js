@@ -15,4 +15,6 @@ export const adminApi = {
     getStudentAnalytics: (rollNo) => http().get(`/admin/analytics/student/${rollNo}`),
     getBranchAnalytics: (branch) => http().get(`/admin/analytics/branch/${branch}`),
     getCompanyAnalytics: (companyId) => http().get(`/admin/analytics/company/${companyId}`),
+    getApplicationsByDrive: (companyName, driveDate) =>
+        http().get(`/admin/applications/${encodeURIComponent(companyName)}/${driveDate}`)
 };

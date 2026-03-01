@@ -52,6 +52,13 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllApplications());
     }
 
+    @GetMapping("/applications/{companyName}/{driveDate}")
+    public ResponseEntity<List<Application>> getApplicationsByDrive(
+            @PathVariable String companyName,
+            @PathVariable String driveDate) {
+        return ResponseEntity.ok(adminService.getApplicationsByDrive(companyName, driveDate));
+    }
+
     @GetMapping("/analytics/student/{rollNo}")
     public ResponseEntity<Map<String, Object>> getStudentAnalytics(@PathVariable String rollNo) {
         return ResponseEntity.ok(analyticsService.getStudentAnalytics(rollNo));
