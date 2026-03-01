@@ -339,6 +339,7 @@ export default function AdminDashboard() {
                                         id="dr-date"
                                         type="date"
                                         className="form-control"
+                                        min={new Date().toISOString().split('T')[0]}
                                         value={driveForm.driveDate}
                                         onChange={e => setDriveForm({ ...driveForm, driveDate: e.target.value })}
                                         required
@@ -396,6 +397,7 @@ export default function AdminDashboard() {
                                         id="elig-date"
                                         type="date"
                                         className="form-control"
+                                        min={new Date().toISOString().split('T')[0]}
                                         value={eligDriveDate}
                                         onChange={e => setEligDriveDate(e.target.value)}
                                         required
@@ -453,6 +455,7 @@ export default function AdminDashboard() {
                                     <input
                                         type="date"
                                         className="form-control"
+                                        min={new Date().toISOString().split('T')[0]}
                                         value={shortlistDriveDate}
                                         onChange={e => setShortlistDriveDate(e.target.value)}
                                         required
