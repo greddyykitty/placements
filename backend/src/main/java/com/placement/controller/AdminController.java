@@ -32,11 +32,12 @@ public class AdminController {
         return ResponseEntity.ok(adminService.createDrive(request));
     }
 
-    @PostMapping("/upload-eligibility/{driveId}")
+    @PostMapping("/upload-eligibility")
     public ResponseEntity<Map<String, Object>> uploadEligibility(
-            @PathVariable Long driveId,
+            @RequestParam String companyName,
+            @RequestParam String driveDate,
             @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(adminService.uploadEligibility(driveId, file));
+        return ResponseEntity.ok(adminService.uploadEligibility(companyName, driveDate, file));
     }
 
     @PutMapping("/application/{id}")
@@ -61,8 +62,8 @@ public class AdminController {
         return ResponseEntity.ok(analyticsService.getBranchAnalytics(branch));
     }
 
-    @GetMapping("/analytics/company/{companyId}")
-    public ResponseEntity<Map<String, Object>> getCompanyAnalytics(@PathVariable Long companyId) {
-        return ResponseEntity.ok(analyticsService.getCompanyAnalytics(companyId));
+    @GetMapping("/analytics/company/{companyName}")
+    public ResponseEntity<Map<String, Object>> getCompanyAnalytics(@PathVariable String companyName) {
+        return ResponseEntity.ok(analyticsService.getCompanyAnalytics(companyName));
     }
 }

@@ -23,11 +23,12 @@ export default function AdminDashboard() {
     // Drive form
     const [companies, setCompanies] = useState([]);
     const [driveForm, setDriveForm] = useState({
-        companyId: '', driveDate: '', status: 'OPEN'
+        companyName: '', driveDate: '', status: 'OPEN'
     });
 
     // Eligibility
-    const [eligDriveId, setEligDriveId] = useState('');
+    const [eligCompanyName, setEligCompanyName] = useState('');
+    const [eligDriveDate, setEligDriveDate] = useState('');
     const [eligFile, setEligFile] = useState(null);
 
     const showSuccess = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 3000); };
@@ -69,34 +70,35 @@ export default function AdminDashboard() {
         setLoading(true);
         try {
             await adminApi.createDrive({
-                companyId: parseInt(driveForm.companyId),
+                companyName: driveForm.companyName,
                 driveDate: driveForm.driveDate,
                 status: driveForm.status,
             });
             showSuccess('Drive created successfully!');
-            setDriveForm({ companyId: '', driveDate: '', status: 'OPEN' });
+            setDriveForm({ companyName: '', driveDate: '', status: 'OPEN' });
         } catch (err) {
-            showError(err.response?.data?.message || 'Failed to create drive');
+            showError(err.response?.data?.message || err.response?.data?.error || 'Failed to create drive');
         } finally { setLoading(false); }
     };
 
     // Upload eligibility
     const handleUploadEligibility = async (e) => {
         e.preventDefault();
-        if (!eligFile || !eligDriveId) {
-            showError('Provide Drive ID and CSV file');
+        if (!eligFile || !eligCompanyName || !eligDriveDate) {
+            showError('Provide Company Name, Drive Date and CSV file');
             return;
         }
         setLoading(true);
         try {
             const fd = new FormData();
             fd.append('file', eligFile);
-            const res = await adminApi.uploadEligibility(eligDriveId, fd);
+            const res = await adminApi.uploadEligibility(eligCompanyName, eligDriveDate, fd);
             showSuccess(`Eligibility uploaded: ${res.data.recordsAdded} records added`);
-            setEligDriveId('');
+            setEligCompanyName('');
+            setEligDriveDate('');
             setEligFile(null);
         } catch (err) {
-            showError(err.response?.data?.message || 'Upload failed');
+            showError(err.response?.data?.message || err.response?.data?.error || 'Upload failed');
         } finally { setLoading(false); }
     };
 
@@ -258,14 +260,14 @@ export default function AdminDashboard() {
                         </div>
                         <form onSubmit={handleAddDrive}>
                             <div className="form-group">
-                                <label className="form-label">Company ID</label>
+                                <label className="form-label">Company Name</label>
                                 <input
                                     id="dr-company"
-                                    type="number"
+                                    type="text"
                                     className="form-control"
-                                    placeholder="Company ID (e.g. 1)"
-                                    value={driveForm.companyId}
-                                    onChange={e => setDriveForm({ ...driveForm, companyId: e.target.value })}
+                                    placeholder="e.g. Google, Infosys"
+                                    value={driveForm.companyName}
+                                    onChange={e => setDriveForm({ ...driveForm, companyName: e.target.value })}
                                     required
                                 />
                             </div>
@@ -314,17 +316,30 @@ export default function AdminDashboard() {
                             <div className="card-subtitle">Upload a CSV with roll numbers to mark eligible students</div>
                         </div>
                         <form onSubmit={handleUploadEligibility}>
-                            <div className="form-group">
-                                <label className="form-label">Drive ID</label>
-                                <input
-                                    id="elig-drive-id"
-                                    type="number"
-                                    className="form-control"
-                                    placeholder="Drive ID (e.g. 1)"
-                                    value={eligDriveId}
-                                    onChange={e => setEligDriveId(e.target.value)}
-                                    required
-                                />
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Company Name</label>
+                                    <input
+                                        id="elig-company"
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="e.g. Google"
+                                        value={eligCompanyName}
+                                        onChange={e => setEligCompanyName(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Drive Date</label>
+                                    <input
+                                        id="elig-date"
+                                        type="date"
+                                        className="form-control"
+                                        value={eligDriveDate}
+                                        onChange={e => setEligDriveDate(e.target.value)}
+                                        required
+                                    />
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">CSV File (column: rollNo)</label>
@@ -350,78 +365,81 @@ export default function AdminDashboard() {
                             </button>
                         </form>
                     </div>
-                )}
+                )
+                }
 
                 {/* Applications */}
-                {tab === 'applications' && (
-                    <div className="card">
-                        <div className="card-header">
-                            <div className="flex-between">
-                                <div>
-                                    <div className="card-title">Student Applications</div>
-                                    <div className="card-subtitle">{applications.length} total applications</div>
+                {
+                    tab === 'applications' && (
+                        <div className="card">
+                            <div className="card-header">
+                                <div className="flex-between">
+                                    <div>
+                                        <div className="card-title">Student Applications</div>
+                                        <div className="card-subtitle">{applications.length} total applications</div>
+                                    </div>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={loadApplications}
+                                    >
+                                        🔄 Refresh
+                                    </button>
                                 </div>
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={loadApplications}
-                                >
-                                    🔄 Refresh
-                                </button>
                             </div>
-                        </div>
 
-                        {applications.length === 0 ? (
-                            <div className="empty-state">
-                                <div className="empty-state-icon">📋</div>
-                                <h3>No Applications Yet</h3>
-                                <p>Applications will appear here once students apply.</p>
-                            </div>
-                        ) : (
-                            <div className="table-wrapper">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Student</th>
-                                            <th>Company</th>
-                                            <th>Date</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {applications.map(app => (
-                                            <tr key={app.id}>
-                                                <td>#{app.id}</td>
-                                                <td>{app.student?.name || '—'}</td>
-                                                <td>{app.drive?.company?.name || '—'}</td>
-                                                <td>{app.drive?.driveDate || '—'}</td>
-                                                <td>
-                                                    <span className={getBadgeClass(app.status)}>
-                                                        {app.status}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <select
-                                                        className="form-control"
-                                                        style={{ padding: '4px 8px', fontSize: '12px' }}
-                                                        value={app.status}
-                                                        onChange={e => handleStatusChange(app.id, e.target.value)}
-                                                    >
-                                                        {STATUS_OPTS.map(s => (
-                                                            <option key={s} value={s}>{s}</option>
-                                                        ))}
-                                                    </select>
-                                                </td>
+                            {applications.length === 0 ? (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">📋</div>
+                                    <h3>No Applications Yet</h3>
+                                    <p>Applications will appear here once students apply.</p>
+                                </div>
+                            ) : (
+                                <div className="table-wrapper">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Student</th>
+                                                <th>Company</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
+                                        </thead>
+                                        <tbody>
+                                            {applications.map(app => (
+                                                <tr key={app.id}>
+                                                    <td>#{app.id}</td>
+                                                    <td>{app.student?.name || '—'}</td>
+                                                    <td>{app.drive?.company?.name || '—'}</td>
+                                                    <td>{app.drive?.driveDate || '—'}</td>
+                                                    <td>
+                                                        <span className={getBadgeClass(app.status)}>
+                                                            {app.status}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <select
+                                                            className="form-control"
+                                                            style={{ padding: '4px 8px', fontSize: '12px' }}
+                                                            value={app.status}
+                                                            onChange={e => handleStatusChange(app.id, e.target.value)}
+                                                        >
+                                                            {STATUS_OPTS.map(s => (
+                                                                <option key={s} value={s}>{s}</option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )
+                }
+            </div >
+        </div >
     );
 }

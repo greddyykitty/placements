@@ -5,8 +5,8 @@ const http = () => createAuthAxios();
 export const adminApi = {
     addCompany: (data) => http().post('/admin/company', data),
     createDrive: (data) => http().post('/admin/drive', data),
-    uploadEligibility: (driveId, formData) =>
-        http().post(`/admin/upload-eligibility/${driveId}`, formData, {
+    uploadEligibility: (companyName, driveDate, formData) =>
+        http().post(`/admin/upload-eligibility?companyName=${encodeURIComponent(companyName)}&driveDate=${driveDate}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
     updateApplicationStatus: (id, status) =>
