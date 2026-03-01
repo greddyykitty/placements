@@ -1,0 +1,18 @@
+# Environment - NEVER commit this (contains DB credentials)
+.env
+
+# Backend build output
+backend/target/
+
+# Frontend build output
+frontend/build/
+frontend/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
