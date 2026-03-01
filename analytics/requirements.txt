@@ -5,3 +5,4 @@ pymysql
 pandas
 matplotlib
 python-dotenv
+google-genai

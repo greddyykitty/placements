@@ -42,6 +42,13 @@ public class AdminService {
             }
         }
 
+        // Prevent duplicate drive loophole
+        if (driveRepository.findByCompanyAndDriveDate(company, request.getDriveDate()).isPresent()) {
+            throw new CustomException(
+                    "A drive for " + company.getName() + " on " + request.getDriveDate() + " already exists!",
+                    HttpStatus.BAD_REQUEST);
+        }
+
         Drive drive = Drive.builder()
                 .company(company)
                 .driveDate(request.getDriveDate())

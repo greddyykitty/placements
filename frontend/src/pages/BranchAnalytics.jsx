@@ -6,6 +6,7 @@ export default function BranchAnalytics() {
     const [branch, setBranch] = useState('');
     const [analytics, setData] = useState(null);
     const [graphUrl, setGraphUrl] = useState('');
+    const [aiAnalysis, setAiAnalysis] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -21,8 +22,26 @@ export default function BranchAnalytics() {
         try {
             const res = await adminApi.getBranchAnalytics(branch);
             setData(res.data);
+
             // Graph from Python analytics service via backend proxy
             setGraphUrl(`/analytics/branch-graph/${branch}?t=${Date.now()}`);
+
+            // Fetch AI analysis directly from the AI proxy endpoint (returns JSON { analysis: "..." })
+            if (res.data.aiAnalysisUrl) {
+                // The URL coming back from spring boot is e.g. "http://analytics:8000/branch-ai-analysis/CSE" 
+                // However, the frontend proxy is configured to hit /analytics/
+                try {
+                    const aiRes = await fetch(`/analytics/branch-ai-analysis/${branch}`);
+                    if (aiRes.ok) {
+                        const aiData = await aiRes.json();
+                        setAiAnalysis(aiData.analysis);
+                    }
+                } catch (errAi) {
+                    console.error("AI Analysis failed:", errAi);
+                    setAiAnalysis("AI Analysis could not be fetched at this time.");
+                }
+            }
+
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to fetch analytics');
         } finally { setLoading(false); }
@@ -116,6 +135,24 @@ export default function BranchAnalytics() {
                         )}
                     </div>
                 )}
+
+                {aiAnalysis && (
+                    <div className="card mt-6">
+                        <div className="card-header" style={{ paddingBottom: '12px' }}>
+                            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>✨</span> AI Placement Insights
+                            </div>
+                        </div>
+                        <div className="p-4 bg-blue-50" style={{ borderRadius: '0 0 8px 8px', lineHeight: '1.6', fontSize: '15px' }}>
+                            {aiAnalysis.split('\n').map((paragraph, index) => (
+                                <p key={index} style={{ marginBottom: paragraph ? '12px' : '0' }}>
+                                    {paragraph}
+                                </p>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
             </div>
         </div>
     );

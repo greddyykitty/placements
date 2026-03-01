@@ -26,6 +26,10 @@ public class AnalyticsService {
                 return analyticsBaseUrl + "/branch-graph/" + branch;
         }
 
+        public String getBranchAiUrl(String branch) {
+                return analyticsBaseUrl + "/branch-ai-analysis/" + branch;
+        }
+
         public String getCompanyGraphUrl(Long companyId) {
                 return analyticsBaseUrl + "/company-graph/" + companyId;
         }
@@ -65,7 +69,8 @@ public class AnalyticsService {
                                 "branch", branch,
                                 "totalStudents", branchStudents.size(),
                                 "selected", selected,
-                                "graphUrl", getBranchGraphUrl(branch));
+                                "graphUrl", getBranchGraphUrl(branch),
+                                "aiAnalysisUrl", getBranchAiUrl(branch));
         }
 
         public Map<String, Object> getCompanyAnalytics(String companyName) {

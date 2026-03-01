@@ -5,8 +5,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from sqlalchemy import create_engine, text
+from google import genai
 
 app = FastAPI(title="Placement Analytics Service")
 
@@ -15,6 +16,7 @@ DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "placement")
 DB_USER = os.getenv("DB_USER", "placement_user")
 DB_PASS = os.getenv("DB_PASS", "placement_pass")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
@@ -190,3 +192,51 @@ def student_graph(roll_no: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/branch-ai-analysis/{branch}")
+def branch_ai_analysis(branch: str):
+    """Use Gemini AI to analyze the placement data for a specific branch."""
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not set. Please set it in the .env file.")
+        
+    try:
+        engine = get_engine()
+        query = text("""
+            SELECT c.name AS company_name,
+                   c.package_amount,
+                   COUNT(a.id) AS selected_count
+            FROM application a
+            JOIN drive d ON a.drive_id = d.id
+            JOIN company c ON d.company_id = c.id
+            JOIN users u ON a.student_id = u.id
+            WHERE u.branch = :branch
+              AND a.status = 'SELECTED'
+            GROUP BY c.name, c.package_amount
+            ORDER BY selected_count DESC
+        """)
+        with engine.connect() as conn:
+            df = pd.read_sql(query, conn, params={"branch": branch})
+
+        if df.empty:
+            return JSONResponse(content={"analysis": f"There is currently no successful placement data available for the {branch} branch."})
+
+        total_selections = int(df['selected_count'].sum())
+        
+        prompt = f"You are a career placement expert analyzing a college placement report. Analyze the following data for the '{branch}' branch.\n\n"
+        prompt += f"Total students selected so far: {total_selections}\n"
+        prompt += "Top companies hiring from this branch along with packages and headcounts:\n"
+        for idx, row in df.iterrows():
+            prompt += f"- {row['company_name']} ({row['package_amount']} LPA): {row['selected_count']} students\n"
+        
+        prompt += "\nWrite a short, engaging 2-3 paragraph analysis. Highlight the strengths, which companies are dominating, the average package perspective if discernible, and give a brief positive outlook. Keep it professional, concise, and do not use markdown syntax just plain text paragraphs."
+
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
+        
+        return JSONResponse(content={"analysis": response.text})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate AI analysis: {str(e)}")
